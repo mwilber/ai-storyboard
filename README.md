@@ -2,6 +2,8 @@
 
 AI Storyboard is a framework-free single-page web app for building a sequence of visual keyframes with prompt text between adjacent frames.
 
+![This is a screenshot of the application showing the AI Storyboard interface with a fixed top-left logo, a top-right Delete Everything button, a centered editable project title, a horizontal keyframe-and-prompt rail, and bottom pagination controls.](screenshot.png)
+
 ## Tech Stack
 - HTML, CSS, and modular JavaScript only
 - No framework, no build step, no external runtime dependencies
