@@ -26,6 +26,8 @@ export class App {
     this.objectUrls = [];
     /** @type {boolean} */
     this.isEditingTitle = false;
+    /** @type {number|null} */
+    this.railScrollRafId = null;
   }
 
   /**
@@ -59,6 +61,7 @@ export class App {
     });
 
     this.#attachWheelToHorizontalScroll();
+    this.#attachRailSelectionTracking();
     this.#handleAutofocus();
   }
 
@@ -248,6 +251,90 @@ export class App {
       },
       { passive: false }
     );
+  }
+
+  /**
+   * Tracks horizontal rail scroll position and syncs pagination active state to the centered prompt tile.
+   * @returns {void}
+   */
+  #attachRailSelectionTracking() {
+    const rail = this.root.querySelector('[data-rail="true"]');
+    if (!(rail instanceof HTMLElement)) {
+      return;
+    }
+
+    const updateActivePromptFromView = () => {
+      this.railScrollRafId = null;
+      const activePromptId = this.#getCenteredPromptId(rail);
+      if (!activePromptId) {
+        return;
+      }
+
+      if (activePromptId !== this.stateManager.getState().selectedPromptId) {
+        this.stateManager.setSelectedPromptId(activePromptId);
+      }
+      this.#updatePaginationHighlight(activePromptId);
+    };
+
+    rail.addEventListener("scroll", () => {
+      if (this.railScrollRafId !== null) {
+        return;
+      }
+      this.railScrollRafId = window.requestAnimationFrame(updateActivePromptFromView);
+    });
+
+    updateActivePromptFromView();
+  }
+
+  /**
+   * Finds the prompt tile whose center is closest to the rail viewport center.
+   * @param {HTMLElement} rail - Horizontal storyboard rail element.
+   * @returns {string|null} Center-most prompt id or null when no prompts exist.
+   */
+  #getCenteredPromptId(rail) {
+    const promptTiles = [...this.root.querySelectorAll("[data-prompt-id]")];
+    if (promptTiles.length === 0) {
+      return null;
+    }
+
+    const railCenter = rail.scrollLeft + rail.clientWidth / 2;
+    let closestPromptId = null;
+    let smallestDistance = Number.POSITIVE_INFINITY;
+
+    promptTiles.forEach((tile) => {
+      if (!(tile instanceof HTMLElement)) {
+        return;
+      }
+
+      const tileCenter = tile.offsetLeft + tile.clientWidth / 2;
+      const distance = Math.abs(tileCenter - railCenter);
+      if (distance < smallestDistance) {
+        smallestDistance = distance;
+        closestPromptId = tile.dataset.promptId || null;
+      }
+    });
+
+    return closestPromptId;
+  }
+
+  /**
+   * Applies active-state styling to the pagination button mapped to a prompt id.
+   * @param {string} promptId - Prompt identifier mapped to pagination buttons.
+   * @returns {void}
+   */
+  #updatePaginationHighlight(promptId) {
+    const buttons = [...this.root.querySelectorAll(".page-btn")];
+    buttons.forEach((button) => {
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+
+      if (button.dataset.promptId === promptId) {
+        button.setAttribute("aria-current", "page");
+      } else {
+        button.removeAttribute("aria-current");
+      }
+    });
   }
 
   /**

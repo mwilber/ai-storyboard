@@ -182,6 +182,10 @@ export class UIRenderer {
           pageBtn.type = "button";
           pageBtn.className = "page-btn";
           pageBtn.textContent = String(entry);
+          const promptForPage = state.prompts[entry - 1];
+          if (promptForPage) {
+            pageBtn.dataset.promptId = promptForPage.id;
+          }
           if (activeIndex + 1 === entry) {
             pageBtn.setAttribute("aria-current", "page");
           }
