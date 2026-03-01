@@ -1,6 +1,10 @@
 # AI Storyboard
 
-AI Storyboard is a framework-free single-page web app for building a sequence of visual keyframes with prompt text between adjacent frames.
+AI Storyboard is a framework-free single-page web app for planning AI-generated video prompts.
+It lets you add keyframe images, then write prompt text to describe the video that should be generated between each pair of keyframes.
+
+All project data is stored only in your current browser using `localStorage` and the Cache API.
+There is no backend server storing storyboard data, projects are not transferable between computers by default, and clearing browser cache/storage will erase all saved keyframes and prompts.
 
 ![This is a screenshot of the application showing the AI Storyboard interface with a fixed top-left logo, a top-right Delete Everything button, a centered editable project title, a horizontal keyframe-and-prompt rail, and bottom pagination controls.](screenshot.png)
 
