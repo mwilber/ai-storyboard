@@ -70,6 +70,7 @@ export class App {
       onCopyPrompt: (promptId, text) => this.#handleCopyPrompt(promptId, text),
       isPromptCopied: (promptId) => this.#isPromptCopied(promptId),
       onPaginationClick: (index) => this.#scrollToPromptIndex(index),
+      onExportPromptsClick: () => this.#handleExportPrompts(),
       onDeleteEverythingClick: () => this.#handleDeleteEverything()
     });
 
@@ -219,6 +220,48 @@ export class App {
     this.#clearCopyTimers();
     await this.imageManager.clearCachedImages();
     await this.render();
+  }
+
+  /**
+   * Exports all prompts as a downloadable text file in storyboard order.
+   * @returns {void}
+   */
+  #handleExportPrompts() {
+    const exportText = this.#buildPromptsExportText();
+    const blob = new Blob([exportText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = this.#buildExportFilename();
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Builds concatenated prompt text output with hard-return heading sections.
+   * @returns {string} Exported prompt text payload.
+   */
+  #buildPromptsExportText() {
+    const prompts = this.stateManager.getState().prompts;
+    return prompts
+      .map((prompt, index) => `\nAI Prompt ${index + 1}\n\n${prompt.text || ""}\n`)
+      .join("");
+  }
+
+  /**
+   * Builds the exported text filename based on the current project title.
+   * @returns {string} Download filename.
+   */
+  #buildExportFilename() {
+    const title = this.stateManager.getState().projectTitle || "ai-storyboard";
+    const safeTitle = title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return `${safeTitle || "ai-storyboard"}-prompts.txt`;
   }
 
   /**

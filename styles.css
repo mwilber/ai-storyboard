@@ -48,11 +48,17 @@ body {
   z-index: 5;
 }
 
-.delete-everything-btn {
+.top-right-controls {
   position: fixed;
   top: var(--header-y);
   right: var(--header-x);
   z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.delete-everything-btn {
   border: 1px solid var(--danger);
   background: transparent;
   color: var(--danger);
@@ -65,6 +71,21 @@ body {
 
 .delete-everything-btn:hover {
   background: rgba(180, 35, 24, 0.08);
+}
+
+.export-prompts-btn {
+  border: 1px solid #2f5de0;
+  background: #ffffff;
+  color: #1f4fd7;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-prompts-btn:hover {
+  background: rgba(37, 99, 235, 0.1);
 }
 
 .project-title-wrap {
@@ -300,6 +321,11 @@ body {
   }
 
   .delete-everything-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .export-prompts-btn {
     padding: 0.4rem 0.7rem;
     font-size: 0.8rem;
   }

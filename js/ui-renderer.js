@@ -34,6 +34,7 @@
  * @property {(promptId: string, text: string) => void} onCopyPrompt - Called when copy prompt button is clicked.
  * @property {(promptId: string) => boolean} isPromptCopied - Returns whether a prompt is currently in copied UI state.
  * @property {(promptIndex: number) => void} onPaginationClick - Called when a page button is selected.
+ * @property {() => void} onExportPromptsClick - Called when export prompts button is clicked.
  * @property {() => void} onDeleteEverythingClick - Called when reset button is clicked.
  * @property {boolean} isEditingTitle - Whether title edit mode is active.
  */
@@ -97,6 +98,7 @@ export class UIRenderer {
       onCopyPrompt,
       isPromptCopied,
       onPaginationClick,
+      onExportPromptsClick,
       onDeleteEverythingClick,
       isEditingTitle
     } = options;
@@ -110,12 +112,23 @@ export class UIRenderer {
     headerLabel.textContent = "AI Storyboard";
     app.append(headerLabel);
 
+    const topRightControls = document.createElement("div");
+    topRightControls.className = "top-right-controls";
+
+    const exportButton = document.createElement("button");
+    exportButton.type = "button";
+    exportButton.className = "export-prompts-btn";
+    exportButton.textContent = "Export Prompts";
+    exportButton.addEventListener("click", onExportPromptsClick);
+    topRightControls.append(exportButton);
+
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "delete-everything-btn";
     deleteButton.textContent = "Delete Everything";
     deleteButton.addEventListener("click", onDeleteEverythingClick);
-    app.append(deleteButton);
+    topRightControls.append(deleteButton);
+    app.append(topRightControls);
 
     const titleWrap = document.createElement("div");
     titleWrap.className = "project-title-wrap";
