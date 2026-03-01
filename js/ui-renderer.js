@@ -29,13 +29,14 @@ export class UIRenderer {
   render(state, options) {
     const {
       imageUrlsByKey,
-      onTitleEditStart,
       onTitleInput,
-      onTitleEditEnd,
+      onTitleStartEditing,
+      onTitleFinishEditing,
       onAddKeyframeClick,
       onPromptInput,
       onPaginationClick,
-      onDeleteEverythingClick
+      onDeleteEverythingClick,
+      isEditingTitle
     } = options;
 
     this.root.innerHTML = "";
@@ -56,20 +57,47 @@ export class UIRenderer {
 
     const titleWrap = document.createElement("div");
     titleWrap.className = "project-title-wrap";
-    const titleInput = document.createElement("input");
-    titleInput.className = "project-title-input";
-    titleInput.value = state.projectTitle;
-    titleInput.setAttribute("aria-label", "Project Title");
-    titleInput.addEventListener("focus", onTitleEditStart);
-    titleInput.addEventListener("input", (event) => onTitleInput(event.target.value));
-    titleInput.addEventListener("blur", (event) => onTitleEditEnd(event.target.value));
-    titleWrap.append(titleInput);
+    if (isEditingTitle) {
+      const titleInput = document.createElement("input");
+      titleInput.className = "project-title-input";
+      titleInput.value = state.projectTitle;
+      titleInput.setAttribute("aria-label", "Project Title");
+      titleInput.addEventListener("input", (event) => onTitleInput(event.target.value));
+      titleInput.addEventListener("blur", (event) => onTitleFinishEditing(event.target.value));
+      titleInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          onTitleFinishEditing(event.target.value);
+        }
+      });
+      titleInput.dataset.autofocus = "true";
+      titleWrap.append(titleInput);
+    } else {
+      const titleDisplay = document.createElement("h1");
+      titleDisplay.className = "project-title";
+      titleDisplay.textContent = state.projectTitle || "Project Title";
+      titleDisplay.tabIndex = 0;
+      titleDisplay.setAttribute("role", "button");
+      titleDisplay.setAttribute("aria-label", "Edit Project Title");
+      titleDisplay.addEventListener("click", onTitleStartEditing);
+      titleDisplay.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onTitleStartEditing();
+        }
+      });
+      titleWrap.append(titleDisplay);
+    }
     app.append(titleWrap);
 
     const layout = document.createElement("main");
     layout.className = "storyboard-layout";
     const rail = document.createElement("section");
     rail.className = "storyboard-rail";
+    if (state.keyframes.length === 0) {
+      rail.classList.add("storyboard-rail-empty");
+    }
+    rail.dataset.rail = "true";
 
     state.keyframes.forEach((keyframe, index) => {
       rail.append(this.#createKeyframeTile(index, keyframe, imageUrlsByKey.get(keyframe.imageKey) || null));
@@ -84,30 +112,31 @@ export class UIRenderer {
     rail.append(this.#createAddTile(onAddKeyframeClick));
     layout.append(rail);
 
-    const pagination = document.createElement("nav");
-    pagination.className = "pagination";
-    pagination.setAttribute("aria-label", "Prompt Pagination");
-    const activeIndex = Math.max(0, state.prompts.findIndex((item) => item.id === state.selectedPromptId));
-    renderPaginationModel(state.prompts.length, activeIndex).forEach((entry) => {
-      if (entry === "...") {
-        const gap = document.createElement("span");
-        gap.className = "page-gap";
-        gap.textContent = "...";
-        pagination.append(gap);
-      } else {
-        const pageBtn = document.createElement("button");
-        pageBtn.type = "button";
-        pageBtn.className = "page-btn";
-        pageBtn.textContent = String(entry);
-        if (activeIndex + 1 === entry) {
-          pageBtn.setAttribute("aria-current", "page");
+    if (state.prompts.length > 0) {
+      const pagination = document.createElement("nav");
+      pagination.className = "pagination";
+      pagination.setAttribute("aria-label", "Prompt Pagination");
+      const activeIndex = Math.max(0, state.prompts.findIndex((item) => item.id === state.selectedPromptId));
+      renderPaginationModel(state.prompts.length, activeIndex).forEach((entry) => {
+        if (entry === "...") {
+          const gap = document.createElement("span");
+          gap.className = "page-gap";
+          gap.textContent = "...";
+          pagination.append(gap);
+        } else {
+          const pageBtn = document.createElement("button");
+          pageBtn.type = "button";
+          pageBtn.className = "page-btn";
+          pageBtn.textContent = String(entry);
+          if (activeIndex + 1 === entry) {
+            pageBtn.setAttribute("aria-current", "page");
+          }
+          pageBtn.addEventListener("click", () => onPaginationClick(entry - 1));
+          pagination.append(pageBtn);
         }
-        pageBtn.addEventListener("click", () => onPaginationClick(entry - 1));
-        pagination.append(pageBtn);
-      }
-    });
-
-    layout.append(pagination);
+      });
+      layout.append(pagination);
+    }
     app.append(layout);
     this.root.append(app);
   }

@@ -12,6 +12,7 @@ export class App {
     this.uiRenderer = new UIRenderer(root);
     this.fileInput = this.#buildFileInput();
     this.objectUrls = [];
+    this.isEditingTitle = false;
   }
 
   async start() {
@@ -26,14 +27,17 @@ export class App {
 
     this.uiRenderer.render(state, {
       imageUrlsByKey,
-      onTitleEditStart: () => {},
+      isEditingTitle: this.isEditingTitle,
+      onTitleStartEditing: () => this.#startTitleEditing(),
       onTitleInput: (title) => this.stateManager.setProjectTitle(title),
-      onTitleEditEnd: (title) => this.stateManager.setProjectTitle(title),
+      onTitleFinishEditing: (title) => this.#finishTitleEditing(title),
       onAddKeyframeClick: () => this.fileInput.click(),
       onPromptInput: (promptId, value) => this.stateManager.updatePrompt(promptId, value),
       onPaginationClick: (index) => this.#scrollToPromptIndex(index),
       onDeleteEverythingClick: () => this.#handleDeleteEverything()
     });
+
+    this.#handleAutofocus();
   }
 
   async #loadImageUrls() {
@@ -71,7 +75,7 @@ export class App {
       await this.render();
 
       if (promptId) {
-        this.#focusPrompt(promptId);
+        this.#focusAndCenterPrompt(promptId);
       }
     });
 
@@ -79,18 +83,18 @@ export class App {
     return input;
   }
 
-  #focusPrompt(promptId) {
+  #focusAndCenterPrompt(promptId) {
     const promptTile = this.root.querySelector(`[data-prompt-id="${promptId}"]`);
     const promptInput = promptTile?.querySelector("textarea");
     if (!promptInput) {
       return;
     }
 
-    promptInput.focus();
-    promptTile.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    promptInput.focus({ preventScroll: true });
+    this.#centerInRail(promptTile, true);
   }
 
-  #scrollToPromptIndex(promptIndex) {
+  async #scrollToPromptIndex(promptIndex) {
     const prompts = this.stateManager.getState().prompts;
     const prompt = prompts[promptIndex];
     if (!prompt) {
@@ -98,8 +102,13 @@ export class App {
     }
 
     this.stateManager.setSelectedPromptId(prompt.id);
+    await this.render();
     const promptTile = this.root.querySelector(`[data-prompt-id="${prompt.id}"]`);
-    promptTile?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    if (promptTile) {
+      this.#centerInRail(promptTile, true);
+      const promptInput = promptTile.querySelector("textarea");
+      promptInput?.focus({ preventScroll: true });
+    }
   }
 
   async #handleDeleteEverything() {
@@ -109,8 +118,44 @@ export class App {
     }
 
     this.stateManager.resetAll();
+    this.isEditingTitle = false;
     await this.imageManager.clearCachedImages();
     await this.render();
+  }
+
+  #startTitleEditing() {
+    this.isEditingTitle = true;
+    this.render();
+  }
+
+  #finishTitleEditing(title) {
+    this.stateManager.setProjectTitle(title.trim() || "Project Title");
+    this.isEditingTitle = false;
+    this.render();
+  }
+
+  #centerInRail(element, smooth = false) {
+    const rail = this.root.querySelector('[data-rail="true"]');
+    if (!rail || !element) {
+      return;
+    }
+
+    const behavior = smooth ? "smooth" : "auto";
+    const targetLeft = element.offsetLeft - (rail.clientWidth - element.clientWidth) / 2;
+    rail.scrollTo({
+      left: Math.max(0, targetLeft),
+      behavior
+    });
+  }
+
+  #handleAutofocus() {
+    const autofocusTarget = this.root.querySelector("[data-autofocus='true']");
+    if (autofocusTarget instanceof HTMLElement) {
+      autofocusTarget.focus({ preventScroll: true });
+      if (autofocusTarget instanceof HTMLInputElement) {
+        autofocusTarget.setSelectionRange(autofocusTarget.value.length, autofocusTarget.value.length);
+      }
+    }
   }
 
   #revokeObjectUrls() {
