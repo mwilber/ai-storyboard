@@ -5,6 +5,7 @@ import { SAVE_DEBOUNCE_MS } from "./config.js";
  * @type {string}
  */
 const DEFAULT_TITLE = "Project Title";
+const REMOVED_PROMPT_PREFIX = "REMOVED PROMPT TEXT: ";
 
 /**
  * @typedef {object} KeyframeEntity
@@ -138,6 +139,70 @@ export class StateManager {
     return {
       keyframeId: newKeyframe.id,
       promptId: this.state.selectedPromptId
+    };
+  }
+
+  /**
+   * Removes a keyframe and reconciles adjacent prompts based on remaining neighbors.
+   * @param {string} keyframeId - Keyframe entity identifier to remove.
+   * @returns {{removedPromptIds: string[], insertedPromptId: string|null}|null} Prompt cleanup metadata or null when keyframe does not exist.
+   */
+  removeKeyframe(keyframeId) {
+    const keyframeIndex = this.state.keyframes.findIndex((item) => item.id === keyframeId);
+    if (keyframeIndex < 0) {
+      return null;
+    }
+
+    const originalKeyframeCount = this.state.keyframes.length;
+    const beforePrompt = keyframeIndex > 0 ? this.state.prompts[keyframeIndex - 1] ?? null : null;
+    const afterPrompt = keyframeIndex < this.state.prompts.length ? this.state.prompts[keyframeIndex] ?? null : null;
+    const removedPromptIds = [];
+
+    if (beforePrompt) {
+      removedPromptIds.push(beforePrompt.id);
+    }
+    if (afterPrompt && (!beforePrompt || afterPrompt.id !== beforePrompt.id)) {
+      removedPromptIds.push(afterPrompt.id);
+    }
+
+    this.state.keyframes.splice(keyframeIndex, 1);
+    this.state.prompts = this.state.prompts.filter((prompt) => !removedPromptIds.includes(prompt.id));
+
+    let insertedPromptId = null;
+    const removedMiddleKeyframe = keyframeIndex > 0 && keyframeIndex < originalKeyframeCount - 1;
+    if (removedMiddleKeyframe && this.state.keyframes.length >= 2) {
+      const leftNeighbor = this.state.keyframes[keyframeIndex - 1];
+      const rightNeighbor = this.state.keyframes[keyframeIndex];
+      if (leftNeighbor && rightNeighbor) {
+        const beforeText = beforePrompt?.text || "";
+        const afterText = afterPrompt?.text || "";
+        const mergedText = [beforeText, afterText].filter(Boolean).join(" ");
+        const mergedPrompt = {
+          id: this.#nextId("pr"),
+          leftKeyframeId: leftNeighbor.id,
+          rightKeyframeId: rightNeighbor.id,
+          text: `${REMOVED_PROMPT_PREFIX}${mergedText}`
+        };
+
+        this.state.prompts.splice(keyframeIndex - 1, 0, mergedPrompt);
+        insertedPromptId = mergedPrompt.id;
+      }
+    }
+
+    if (insertedPromptId) {
+      this.state.selectedPromptId = insertedPromptId;
+    } else if (
+      this.state.selectedPromptId &&
+      (removedPromptIds.includes(this.state.selectedPromptId) ||
+        !this.state.prompts.some((prompt) => prompt.id === this.state.selectedPromptId))
+    ) {
+      this.state.selectedPromptId = this.state.prompts[0]?.id ?? null;
+    }
+
+    this.#saveNow();
+    return {
+      removedPromptIds,
+      insertedPromptId
     };
   }
 

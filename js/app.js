@@ -59,6 +59,7 @@ export class App {
       onTitleInput: (title) => this.stateManager.setProjectTitle(title),
       onTitleFinishEditing: (title) => this.#finishTitleEditing(title),
       onAddKeyframeClick: () => this.fileInput.click(),
+      onDeleteKeyframeClick: (keyframeId) => this.#handleDeleteKeyframe(keyframeId),
       onPromptInput: (promptId, value) => this.stateManager.updatePrompt(promptId, value),
       onCopyPrompt: (promptId, text) => this.#handleCopyPrompt(promptId, text),
       isPromptCopied: (promptId) => this.#isPromptCopied(promptId),
@@ -175,6 +176,32 @@ export class App {
     this.#clearCopyTimers();
     await this.imageManager.clearCachedImages();
     await this.render();
+  }
+
+  /**
+   * Removes a keyframe and reconciles surrounding prompts per storyboard rules.
+   * @param {string} keyframeId - Keyframe identifier to remove.
+   * @returns {Promise<void>}
+   */
+  async #handleDeleteKeyframe(keyframeId) {
+    const confirmed = window.confirm(
+      "Delete this keyframe and its adjacent AI prompt text sections?"
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    const result = this.stateManager.removeKeyframe(keyframeId);
+    if (!result) {
+      return;
+    }
+
+    result.removedPromptIds.forEach((promptId) => this.#clearCopyStateForPrompt(promptId));
+    await this.render();
+
+    if (result.insertedPromptId) {
+      this.#focusAndCenterPrompt(result.insertedPromptId);
+    }
   }
 
   /**
@@ -419,6 +446,20 @@ export class App {
     this.promptCopiedTimers.forEach((timerId) => window.clearTimeout(timerId));
     this.promptCopiedTimers.clear();
     this.promptCopiedUntil.clear();
+  }
+
+  /**
+   * Clears copied-state timer metadata for a single prompt id.
+   * @param {string} promptId - Prompt identifier.
+   * @returns {void}
+   */
+  #clearCopyStateForPrompt(promptId) {
+    const timerId = this.promptCopiedTimers.get(promptId);
+    if (typeof timerId === "number") {
+      window.clearTimeout(timerId);
+    }
+    this.promptCopiedTimers.delete(promptId);
+    this.promptCopiedUntil.delete(promptId);
   }
 
   /**

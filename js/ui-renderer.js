@@ -28,6 +28,7 @@
  * @property {() => void} onTitleStartEditing - Called when title enters edit mode.
  * @property {(title: string) => void} onTitleFinishEditing - Called when title edit commits.
  * @property {() => void} onAddKeyframeClick - Called when add-keyframe button is clicked.
+ * @property {(keyframeId: string) => void} onDeleteKeyframeClick - Called when a keyframe delete button is clicked.
  * @property {(promptId: string, text: string) => void} onPromptInput - Called on prompt input events.
  * @property {(promptId: string, text: string) => void} onCopyPrompt - Called when copy prompt button is clicked.
  * @property {(promptId: string) => boolean} isPromptCopied - Returns whether a prompt is currently in copied UI state.
@@ -89,6 +90,7 @@ export class UIRenderer {
       onTitleStartEditing,
       onTitleFinishEditing,
       onAddKeyframeClick,
+      onDeleteKeyframeClick,
       onPromptInput,
       onCopyPrompt,
       isPromptCopied,
@@ -158,7 +160,7 @@ export class UIRenderer {
     rail.dataset.rail = "true";
 
     state.keyframes.forEach((keyframe, index) => {
-      rail.append(this.#createKeyframeTile(index, keyframe, imageUrlsByKey.get(keyframe.imageKey) || null));
+      rail.append(this.#createKeyframeTile(index, keyframe, imageUrlsByKey.get(keyframe.imageKey) || null, onDeleteKeyframeClick));
       if (index < state.keyframes.length - 1) {
         const prompt = state.prompts[index];
         if (prompt) {
@@ -208,9 +210,10 @@ export class UIRenderer {
    * @param {number} index - Zero-based keyframe order index.
    * @param {KeyframeEntity} keyframe - Keyframe entity metadata.
    * @param {string|null} imageUrl - Object URL for the keyframe image when available.
+   * @param {(keyframeId: string) => void} onDeleteKeyframeClick - Keyframe deletion callback.
    * @returns {HTMLElement} Keyframe tile element.
    */
-  #createKeyframeTile(index, keyframe, imageUrl) {
+  #createKeyframeTile(index, keyframe, imageUrl, onDeleteKeyframeClick) {
     const tile = document.createElement("article");
     tile.className = "tile keyframe-tile";
     tile.dataset.keyframeId = keyframe.id;
@@ -234,6 +237,14 @@ export class UIRenderer {
     caption.className = "keyframe-caption";
     caption.textContent = `Keyframe ${index + 1}`;
     tile.append(caption);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-keyframe-btn";
+    deleteButton.textContent = "Delete Keyframe";
+    deleteButton.setAttribute("aria-label", `Delete Keyframe ${index + 1}`);
+    deleteButton.addEventListener("click", () => onDeleteKeyframeClick(keyframe.id));
+    tile.append(deleteButton);
 
     return tile;
   }

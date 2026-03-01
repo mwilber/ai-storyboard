@@ -153,6 +153,19 @@ body {
   color: #3b3b3b;
 }
 
+.delete-keyframe-btn {
+  margin: 0.5rem auto 0;
+  display: block;
+  border: 1px solid #cc3d3d;
+  border-radius: 8px;
+  background: #fff;
+  color: #9f2626;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .prompt-tile {
   width: clamp(220px, 26vw, 420px);
   align-self: center;
