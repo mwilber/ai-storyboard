@@ -1,0 +1,244 @@
+:root {
+  --bg: #efefef;
+  --text: #1f1f1f;
+  --muted: #666;
+  --panel: #ffffff;
+  --border: #d4d4d4;
+  --button: #242424;
+  --button-text: #ffffff;
+  --danger: #b42318;
+  --focus: #2563eb;
+  --header-x: 20px;
+  --header-y: 20px;
+  --title-top-gap: 88px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header-label {
+  position: fixed;
+  top: var(--header-y);
+  left: var(--header-x);
+  margin: 0;
+  font-size: clamp(1.5rem, 2.6vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1;
+  z-index: 5;
+}
+
+.delete-everything-btn {
+  position: fixed;
+  top: var(--header-y);
+  right: var(--header-x);
+  z-index: 5;
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.delete-everything-btn:hover {
+  background: rgba(180, 35, 24, 0.08);
+}
+
+.project-title-wrap {
+  margin-top: var(--title-top-gap);
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+}
+
+.project-title {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  font-weight: 500;
+}
+
+.project-title-input {
+  width: min(860px, 92vw);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: clamp(1.4rem, 2.6vw, 2.4rem);
+  padding: 0.25rem 0.5rem;
+  text-align: center;
+}
+
+.storyboard-layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0 0.75rem;
+}
+
+.storyboard-rail {
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(1.5rem, 4vw, 4.5rem);
+  padding: 0 22vw 0.5rem;
+}
+
+.tile {
+  flex: 0 0 auto;
+}
+
+.keyframe-tile {
+  width: clamp(260px, 44vw, 680px);
+}
+
+.media-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #ddd;
+  border: 1px solid #bbb;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.media-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-missing {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.keyframe-caption {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  color: #3b3b3b;
+}
+
+.prompt-tile {
+  width: clamp(220px, 26vw, 420px);
+  align-self: center;
+}
+
+.prompt-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #4a4a4a;
+  font-weight: 500;
+}
+
+.prompt-input {
+  width: 100%;
+  height: 166px;
+  resize: none;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  font: inherit;
+}
+
+.add-tile {
+  align-self: center;
+  text-align: center;
+}
+
+.add-label {
+  display: block;
+  margin-bottom: 0.65rem;
+  color: #333;
+}
+
+.add-btn {
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 999px;
+  font-size: 1.6rem;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--button);
+  color: var(--button-text);
+}
+
+.pagination {
+  min-height: 34px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.page-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #444;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.page-btn[aria-current="page"] {
+  background: #222;
+  color: #fff;
+}
+
+.page-gap {
+  color: #777;
+  font-size: 0.95rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --header-x: 12px;
+    --header-y: 12px;
+    --title-top-gap: 84px;
+  }
+
+  .delete-everything-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .storyboard-rail {
+    padding-left: 14vw;
+    padding-right: 14vw;
+  }
+}
