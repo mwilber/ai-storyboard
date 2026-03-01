@@ -10,7 +10,7 @@
 ## Wireframe-Derived UI Requirements
 1. Global structure
 - Fixed app label at top-left: `AI Storyboard`.
-- Top-right control aligned with app label row: `Delete Everything`.
+- Top-right controls aligned with app label row: `Export Prompts` and `Delete Everything`.
 - Centered editable project title below the fixed app label.
 - Main content area under the title occupies the remaining viewport height.
 - Main content area scrolls horizontally to reveal keyframes and prompt sections.
@@ -29,7 +29,7 @@
 4. After second upload and beyond (Design 3 behavior)
 - Keyframes continue in upload order left to right.
 - Between each adjacent pair of keyframes, render an `AI Prompt` section:
-- Section has a label `AI Prompt`.
+- Section has a label `AI Prompt #` where `#` is the prompt sequence index.
 - Section contains a fixed-height textarea with vertical scrolling for long text.
 - Textarea starts empty when first created.
 - Newly created textarea receives focus automatically.
@@ -113,10 +113,19 @@
 - `Add A Keyframe` remains the last tile in the sequence at all times.
 - Each upload appends one keyframe to the end.
 - After adding the second keyframe and each subsequent keyframe, create exactly one new prompt between the new keyframe and the previous keyframe.
+- Prompt-edge insert controls appear on both sides of each existing prompt.
+- Inserting at a prompt edge creates a new keyframe at that position and a new adjacent prompt while preserving the alternating keyframe/prompt sequence.
+
+## Keyframe Deletion Behavior
+- Each keyframe tile includes a `Delete Keyframe` button.
+- Deletion requires user confirmation before any mutation.
+- Removing a keyframe removes its adjacent prompts (before/after when present).
+- If deletion occurs between two remaining keyframes, insert one new merged prompt between them.
+- Merged prompt text format starts with `REMOVED PROMPT TEXT: ` followed by concatenated removed prompt text.
 
 ## Future Enhancement Preparation
-- Deletion/reordering is out of scope for this phase.
-- Prepare state to support future deletion/reordering by storing stable IDs:
+- Reordering remains out of scope for this phase.
+- Prepare state to support future reordering by storing stable IDs:
 - `keyframe.id` separate from array position
 - `prompt.id` mapped to adjacent keyframe IDs rather than only index math
 
@@ -130,6 +139,7 @@
 - Bootstraps modules.
 - Wires UI events to state updates.
 - Handles initial render and re-render triggers.
+- Handles export prompt downloads.
 - Handles `Delete Everything` button click, confirmation, and full reset flow.
 - `ImageManager` class:
 - Validates selected image files.
@@ -217,8 +227,12 @@
 - Title behavior is implemented as display text that enters edit mode on click/keyboard activation and commits on blur/Enter.
 - Pagination currently renders only when prompts exist and is fixed-center near the bottom of the viewport.
 - Prompt navigation and creation currently center prompt tiles in the rail and focus the corresponding textarea.
+- Rail position is preserved across re-renders by re-centering on the previously centered prompt ID.
 - `Delete Everything` currently clears serialized localStorage state and the app image cache after confirmation.
 - Storyboard rail currently maps wheel input to horizontal scrolling while preserving ctrl+wheel browser zoom behavior.
+- Wheel override is bypassed when the pointer is over a vertically scrollable prompt textarea.
+- Prompt tiles include `Copy to clipboard` with temporary `Copied` label state.
+- `Export Prompts` downloads a text file of all prompts in storyboard order with section headings (`AI Prompt #`) and extra blank-line separation.
 
 ## JavaScript Documentation Standard
 - Every JavaScript configuration variable, function, method, and class must include JSDoc documentation.

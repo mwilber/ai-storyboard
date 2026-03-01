@@ -56,7 +56,7 @@ Notes:
 ## Architecture Overview
 - `App` (`js/app.js`)
   - Bootstraps app modules and binds UI interactions.
-  - Handles title edit mode, prompt focus/centering, and delete-all flow.
+  - Handles title edit mode, prompt focus/centering, keyframe insertion/deletion, and export/reset flows.
 
 - `StateManager` (`js/state-manager.js`)
   - Owns canonical in-memory app state.
@@ -74,14 +74,23 @@ Notes:
 
 ## Current Behavior
 - Top-left app title: `AI Storyboard`
-- Top-right destructive action: `Delete Everything`
+- Top-right controls: `Export Prompts` and `Delete Everything`
 - Centered project title that toggles to editable mode on click
 - Horizontally scrollable storyboard rail
-- Add keyframes via image upload
-- Auto-insert one prompt tile between each adjacent keyframe pair
+- Add keyframes via image upload at the end or at insertion controls on both sides of each prompt
+- Auto-maintain alternating sequence: keyframe/prompt/keyframe/prompt
+- Prompt labels are numbered (`AI Prompt 1`, `AI Prompt 2`, ...)
+- Each prompt includes a `Copy to clipboard` action with temporary `Copied` feedback
+- Each keyframe includes `Delete Keyframe` with confirmation and prompt reconciliation behavior
 - Fixed-center pagination shown when prompt tiles exist
-- Wheel input over the rail maps to horizontal scrolling
+- Wheel input over the rail maps to horizontal scrolling (except inside overflowed prompt textareas)
+- Rail re-renders preserve prompt context by re-centering on the currently centered prompt
 - Missing cached image restores as an in-sequence placeholder tile
+
+## Export Behavior
+- `Export Prompts` downloads a `.txt` file generated entirely in the browser.
+- Prompts are concatenated in storyboard order.
+- Each section starts with a hard return, heading (`AI Prompt #`), another hard return, prompt text, and a trailing hard return for spacing.
 
 ## Persistence Model
 - State JSON is stored in `localStorage` under a configured key.
