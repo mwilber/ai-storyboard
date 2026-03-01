@@ -248,6 +248,10 @@ export class App {
           return;
         }
 
+        if (this.#shouldAllowNativeTextScroll(event)) {
+          return;
+        }
+
         const delta = Math.abs(event.deltaY) > Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
         if (delta === 0) {
           return;
@@ -258,6 +262,25 @@ export class App {
       },
       { passive: false }
     );
+  }
+
+  /**
+   * Determines whether wheel input should be handled natively by a prompt textarea.
+   * @param {WheelEvent} event - Wheel input event originating from the storyboard rail.
+   * @returns {boolean} True when the pointer is over a vertically scrollable prompt textarea.
+   */
+  #shouldAllowNativeTextScroll(event) {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return false;
+    }
+
+    const textArea = target.closest(".prompt-input");
+    if (!(textArea instanceof HTMLTextAreaElement)) {
+      return false;
+    }
+
+    return textArea.scrollHeight > textArea.clientHeight;
   }
 
   /**
