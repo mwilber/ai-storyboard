@@ -49,22 +49,22 @@ Notes:
 
 ## Architecture Overview
 - `App` (`js/app.js`)
-- Bootstraps app modules and binds UI interactions.
-- Handles title edit mode, prompt focus/centering, and delete-all flow.
+  - Bootstraps app modules and binds UI interactions.
+  - Handles title edit mode, prompt focus/centering, and delete-all flow.
 
 - `StateManager` (`js/state-manager.js`)
-- Owns canonical in-memory app state.
-- Applies state mutations and enforces ordering rules (`prompts = keyframes - 1`).
-- Triggers immediate persisted writes (debounced for text input).
+  - Owns canonical in-memory app state.
+  - Applies state mutations and enforces ordering rules (`prompts = keyframes - 1`).
+  - Triggers immediate persisted writes (debounced for text input).
 
 - `StorageManager` (`js/storage-manager.js`)
-- Serializes/deserializes JSON state in `localStorage`.
+  - Serializes/deserializes JSON state in `localStorage`.
 
 - `ImageManager` (`js/image-manager.js`)
-- Validates uploads, writes/reads image blobs in Cache API, clears cache on reset.
+  - Validates uploads, writes/reads image blobs in Cache API, clears cache on reset.
 
 - `UIRenderer` (`js/ui-renderer.js`)
-- Renders the entire UI from state and exposes event hooks back to `App`.
+  - Renders the entire UI from state and exposes event hooks back to `App`.
 
 ## Current Behavior
 - Top-left app title: `AI Storyboard`
