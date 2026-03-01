@@ -37,6 +37,7 @@ export class App {
       onDeleteEverythingClick: () => this.#handleDeleteEverything()
     });
 
+    this.#attachWheelToHorizontalScroll();
     this.#handleAutofocus();
   }
 
@@ -156,6 +157,31 @@ export class App {
         autofocusTarget.setSelectionRange(autofocusTarget.value.length, autofocusTarget.value.length);
       }
     }
+  }
+
+  #attachWheelToHorizontalScroll() {
+    const rail = this.root.querySelector('[data-rail="true"]');
+    if (!(rail instanceof HTMLElement)) {
+      return;
+    }
+
+    rail.addEventListener(
+      "wheel",
+      (event) => {
+        if (event.ctrlKey) {
+          return;
+        }
+
+        const delta = Math.abs(event.deltaY) > Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+        if (delta === 0) {
+          return;
+        }
+
+        event.preventDefault();
+        rail.scrollLeft += delta;
+      },
+      { passive: false }
+    );
   }
 
   #revokeObjectUrls() {
