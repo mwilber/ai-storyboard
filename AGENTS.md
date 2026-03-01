@@ -94,6 +94,7 @@
 - Add clear focus styles and keyboard support for editing title/upload.
 - Add descriptive `alt` text for uploaded images.
 - Upload validation only checks that selected files are browser-displayable images.
+- Mouse wheel interaction over the storyboard rail must drive horizontal scroll movement.
 
 ## Persistence Requirements
 - Use both `localStorage` and Cache API for browser-side persistence.
@@ -210,6 +211,19 @@
 ## Restore and Recovery Rules
 - If a cached image is missing/corrupt during restore, preserve storyboard order with a placeholder tile.
 - Placeholder remains linked to its keyframe metadata for future re-upload/repair workflows.
+
+## Current Implementation Notes
+- Core SPA scaffolding is implemented with `index.html`, `styles.css`, and modules in `js/`.
+- Title behavior is implemented as display text that enters edit mode on click/keyboard activation and commits on blur/Enter.
+- Pagination currently renders only when prompts exist and is fixed-center near the bottom of the viewport.
+- Prompt navigation and creation currently center prompt tiles in the rail and focus the corresponding textarea.
+- `Delete Everything` currently clears serialized localStorage state and the app image cache after confirmation.
+- Storyboard rail currently maps wheel input to horizontal scrolling while preserving ctrl+wheel browser zoom behavior.
+
+## JavaScript Documentation Standard
+- Every JavaScript configuration variable, function, method, and class must include JSDoc documentation.
+- New or modified JS code must preserve complete JSDoc coverage before commit.
+- JSDoc should document parameter types, return types, and concise behavior intent.
 
 ## Commit Message Format
 - Commit messages must start with a single sentence that summarizes all changes in the commit.

@@ -1,62 +1,96 @@
 # AI Storyboard
 
-Single-page web application for planning keyframes and prompt transitions for AI-generated video workflows.
+AI Storyboard is a framework-free single-page web app for building a sequence of visual keyframes with prompt text between adjacent frames.
 
-## Current Phase
-- UI requirements review from wireframes.
-- Technology and architecture decisions will be finalized in a later step.
-- Confirmed product behavior and persistence rules are captured below.
+## Tech Stack
+- HTML, CSS, and modular JavaScript only
+- No framework, no build step, no external runtime dependencies
+- Browser-only state and asset persistence (`localStorage` + Cache API)
 
-## Baseline Product Requirements (UI)
-1. General layout
-- Fixed app label at top-left: `AI Storyboard`.
-- Top-right button aligned with app label: `Delete Everything`.
-- Centered, editable project title near the top.
-- Main storyboard region fills remaining viewport and scrolls horizontally.
+## Local Development Setup
+1. Clone the repo and enter the project directory.
+2. Start a static server from the project root.
 
-2. Design 1 (empty state)
-- Show only an `Add A Keyframe` control in the storyboard rail.
-- Control includes a text label and circular plus button.
-- Clicking it opens an image file picker.
+Example options:
 
-3. Design 2 (first keyframe)
-- Uploaded image appears in the rail.
-- Caption under image: `Keyframe 1`.
-- `Add A Keyframe` remains visible to add more.
+```bash
+# Python 3
+python3 -m http.server 8000
+```
 
-4. Design 3+ (second keyframe onward)
-- Keyframes render in upload order from left to right.
-- An `AI Prompt` textarea appears between adjacent keyframes.
-- Textarea is fixed height, vertically scrollable, initially empty.
-- Newly created prompt textarea auto-focuses and scrolls into centered view.
-- Prompt count is always `(number of keyframes) - 1`.
-- Pagination appears below the storyboard once prompts exist.
-- Pagination is fixed-center in the window and maps to prompt sections.
-- Pagination uses compact truncation (`...`) for long ranges per the design guide.
-- There is no hard limit on keyframe count.
+```bash
+# Node (if you prefer)
+npx serve .
+```
 
-## Implementation Direction (HTML/CSS)
-- Use semantic HTML: `header`, `main`, `section`, `button`, `input`, `textarea`.
-- Build a horizontal flex rail with `overflow-x: auto`.
-- Represent storyboard items as reusable tile blocks:
-- keyframe tile
-- prompt tile
-- add-keyframe tile
-- Use responsive sizing with `clamp(...)` to support desktop/mobile.
-- Render keyframe tiles in a fixed 16:9 frame with `object-fit: cover`.
-- Keep interactions and rendering in plain JavaScript (no frameworks).
-- Keep `Add A Keyframe` as the final tile at all times.
+3. Open `http://localhost:8000` (or the URL printed by your server).
 
-## Persistence
-- Persist changes immediately in-browser.
-- Use a combination of `localStorage` and Cache API.
-- Accept any valid browser-displayable image file.
-- Use a small configurable debounce for text persistence writes (default target: `75ms`).
-- `Delete Everything` clears serialized app state from `localStorage` and cached storyboard images from Cache API.
+Notes:
+- Do not open `index.html` directly via `file://`; Cache API behavior is browser/server-context dependent.
+- No install step is required unless you choose an npm-based static server.
 
-## Restore Behavior
-- If an image cache entry is missing/corrupt, keep its keyframe position and show a placeholder.
+## Project Structure
+```text
+.
+├── index.html
+├── styles.css
+├── js/
+│   ├── main.js
+│   ├── app.js
+│   ├── config.js
+│   ├── state-manager.js
+│   ├── storage-manager.js
+│   ├── image-manager.js
+│   └── ui-renderer.js
+├── designs/
+├── AGENTS.md
+└── README.md
+```
 
-## Future Enhancements
-- Deletion/reordering are planned for a future phase.
-- Current implementation should keep state structured for that extension (stable IDs over index-only coupling).
+## Architecture Overview
+- `App` (`js/app.js`)
+- Bootstraps app modules and binds UI interactions.
+- Handles title edit mode, prompt focus/centering, and delete-all flow.
+
+- `StateManager` (`js/state-manager.js`)
+- Owns canonical in-memory app state.
+- Applies state mutations and enforces ordering rules (`prompts = keyframes - 1`).
+- Triggers immediate persisted writes (debounced for text input).
+
+- `StorageManager` (`js/storage-manager.js`)
+- Serializes/deserializes JSON state in `localStorage`.
+
+- `ImageManager` (`js/image-manager.js`)
+- Validates uploads, writes/reads image blobs in Cache API, clears cache on reset.
+
+- `UIRenderer` (`js/ui-renderer.js`)
+- Renders the entire UI from state and exposes event hooks back to `App`.
+
+## Current Behavior
+- Top-left app title: `AI Storyboard`
+- Top-right destructive action: `Delete Everything`
+- Centered project title that toggles to editable mode on click
+- Horizontally scrollable storyboard rail
+- Add keyframes via image upload
+- Auto-insert one prompt tile between each adjacent keyframe pair
+- Fixed-center pagination shown when prompt tiles exist
+- Wheel input over the rail maps to horizontal scrolling
+- Missing cached image restores as an in-sequence placeholder tile
+
+## Persistence Model
+- State JSON is stored in `localStorage` under a configured key.
+- Image binary data is stored in Cache API under a configured cache name.
+- Text input writes are debounced (see `SAVE_DEBOUNCE_MS` in `js/config.js`).
+- Non-text structural changes (uploads, selection changes, reset) persist immediately.
+
+## Reset Behavior
+`Delete Everything` clears:
+- App state entry from `localStorage`
+- Cached storyboard images from Cache API
+
+After reset, the app returns to the empty initial state.
+
+## Development Notes
+- Keep modules framework-free and browser-native.
+- Keep render order deterministic: keyframe/prompt/keyframe/.../add-button.
+- Prefer stable IDs in state to support future reordering/deletion features.

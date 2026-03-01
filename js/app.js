@@ -3,23 +3,44 @@ import { StateManager } from "./state-manager.js";
 import { StorageManager } from "./storage-manager.js";
 import { UIRenderer } from "./ui-renderer.js";
 
+/**
+ * Coordinates app startup, rendering, event wiring, and cross-manager interactions.
+ */
 export class App {
+  /**
+   * @param {HTMLElement} root - Root mount node for the application UI.
+   */
   constructor(root) {
     this.root = root;
+    /** @type {StorageManager} */
     this.storageManager = new StorageManager();
+    /** @type {ImageManager} */
     this.imageManager = new ImageManager();
+    /** @type {StateManager} */
     this.stateManager = new StateManager(this.storageManager);
+    /** @type {UIRenderer} */
     this.uiRenderer = new UIRenderer(root);
+    /** @type {HTMLInputElement} */
     this.fileInput = this.#buildFileInput();
+    /** @type {string[]} */
     this.objectUrls = [];
+    /** @type {boolean} */
     this.isEditingTitle = false;
   }
 
+  /**
+   * Initializes state and renders the application.
+   * @returns {Promise<void>}
+   */
   async start() {
     this.stateManager.initialize();
     await this.render();
   }
 
+  /**
+   * Re-renders the UI based on current state and runtime image URL mapping.
+   * @returns {Promise<void>}
+   */
   async render() {
     this.#revokeObjectUrls();
     const imageUrlsByKey = await this.#loadImageUrls();
@@ -41,6 +62,10 @@ export class App {
     this.#handleAutofocus();
   }
 
+  /**
+   * Loads runtime blob URLs for each keyframe image.
+   * @returns {Promise<Map<string, string>>} Map of image cache keys to object URLs.
+   */
   async #loadImageUrls() {
     const state = this.stateManager.getState();
     const imageUrlsByKey = new Map();
@@ -58,6 +83,10 @@ export class App {
     return imageUrlsByKey;
   }
 
+  /**
+   * Creates and configures the hidden file input used for keyframe uploads.
+   * @returns {HTMLInputElement} Hidden file input element.
+   */
   #buildFileInput() {
     const input = document.createElement("input");
     input.type = "file";
@@ -84,6 +113,11 @@ export class App {
     return input;
   }
 
+  /**
+   * Focuses and centers a prompt tile in the horizontal rail.
+   * @param {string} promptId - Prompt identifier to focus.
+   * @returns {void}
+   */
   #focusAndCenterPrompt(promptId) {
     const promptTile = this.root.querySelector(`[data-prompt-id="${promptId}"]`);
     const promptInput = promptTile?.querySelector("textarea");
@@ -95,6 +129,11 @@ export class App {
     this.#centerInRail(promptTile, true);
   }
 
+  /**
+   * Selects a prompt by index, re-renders active state, then centers and focuses the prompt input.
+   * @param {number} promptIndex - Zero-based prompt index.
+   * @returns {Promise<void>}
+   */
   async #scrollToPromptIndex(promptIndex) {
     const prompts = this.stateManager.getState().prompts;
     const prompt = prompts[promptIndex];
@@ -112,6 +151,10 @@ export class App {
     }
   }
 
+  /**
+   * Clears persisted app state and cached images after user confirmation.
+   * @returns {Promise<void>}
+   */
   async #handleDeleteEverything() {
     const confirmed = window.confirm("Delete all keyframes, prompts, and cached images?");
     if (!confirmed) {
@@ -124,17 +167,32 @@ export class App {
     await this.render();
   }
 
+  /**
+   * Enables title edit mode and re-renders.
+   * @returns {void}
+   */
   #startTitleEditing() {
     this.isEditingTitle = true;
     this.render();
   }
 
+  /**
+   * Commits title text, exits edit mode, and re-renders.
+   * @param {string} title - Title text from the edit input.
+   * @returns {void}
+   */
   #finishTitleEditing(title) {
     this.stateManager.setProjectTitle(title.trim() || "Project Title");
     this.isEditingTitle = false;
     this.render();
   }
 
+  /**
+   * Scrolls the horizontal rail so the target element appears centered.
+   * @param {HTMLElement} element - Element to center in the rail viewport.
+   * @param {boolean} [smooth=false] - Whether to use smooth scrolling.
+   * @returns {void}
+   */
   #centerInRail(element, smooth = false) {
     const rail = this.root.querySelector('[data-rail="true"]');
     if (!rail || !element) {
@@ -149,6 +207,10 @@ export class App {
     });
   }
 
+  /**
+   * Focuses the first element marked with the data-autofocus attribute.
+   * @returns {void}
+   */
   #handleAutofocus() {
     const autofocusTarget = this.root.querySelector("[data-autofocus='true']");
     if (autofocusTarget instanceof HTMLElement) {
@@ -159,6 +221,10 @@ export class App {
     }
   }
 
+  /**
+   * Routes wheel deltas to horizontal scrolling while pointer is over the storyboard rail.
+   * @returns {void}
+   */
   #attachWheelToHorizontalScroll() {
     const rail = this.root.querySelector('[data-rail="true"]');
     if (!(rail instanceof HTMLElement)) {
@@ -184,6 +250,10 @@ export class App {
     );
   }
 
+  /**
+   * Revokes all temporary object URLs from the previous render cycle.
+   * @returns {void}
+   */
   #revokeObjectUrls() {
     this.objectUrls.forEach((url) => URL.revokeObjectURL(url));
     this.objectUrls = [];

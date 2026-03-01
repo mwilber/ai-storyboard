@@ -1,3 +1,45 @@
+/**
+ * @typedef {object} KeyframeEntity
+ * @property {string} id - Stable keyframe identifier.
+ * @property {string} imageKey - Cache key for the keyframe image.
+ * @property {number} createdAt - Keyframe creation timestamp in milliseconds.
+ */
+
+/**
+ * @typedef {object} PromptEntity
+ * @property {string} id - Stable prompt identifier.
+ * @property {string} leftKeyframeId - Left adjacent keyframe id.
+ * @property {string} rightKeyframeId - Right adjacent keyframe id.
+ * @property {string} text - Prompt text content.
+ */
+
+/**
+ * @typedef {object} StoryboardState
+ * @property {string} projectTitle - Current storyboard title.
+ * @property {string|null} selectedPromptId - Active prompt id.
+ * @property {KeyframeEntity[]} keyframes - Ordered keyframe entities.
+ * @property {PromptEntity[]} prompts - Ordered prompt entities.
+ */
+
+/**
+ * @typedef {object} UIRenderOptions
+ * @property {Map<string, string>} imageUrlsByKey - Runtime map of image keys to object URLs.
+ * @property {(title: string) => void} onTitleInput - Called on title input events.
+ * @property {() => void} onTitleStartEditing - Called when title enters edit mode.
+ * @property {(title: string) => void} onTitleFinishEditing - Called when title edit commits.
+ * @property {() => void} onAddKeyframeClick - Called when add-keyframe button is clicked.
+ * @property {(promptId: string, text: string) => void} onPromptInput - Called on prompt input events.
+ * @property {(promptIndex: number) => void} onPaginationClick - Called when a page button is selected.
+ * @property {() => void} onDeleteEverythingClick - Called when reset button is clicked.
+ * @property {boolean} isEditingTitle - Whether title edit mode is active.
+ */
+
+/**
+ * Builds a compact pagination model with ellipsis entries for large page ranges.
+ * @param {number} total - Total number of prompt pages.
+ * @param {number} activeIndex - Zero-based active prompt index.
+ * @returns {(number|string)[]} Pagination tokens where numbers are 1-based page values and "..." is a gap marker.
+ */
 function renderPaginationModel(total, activeIndex) {
   if (total <= 0) {
     return [];
@@ -21,11 +63,23 @@ function renderPaginationModel(total, activeIndex) {
   return model;
 }
 
+/**
+ * Renders the storyboard UI from state and callback handlers.
+ */
 export class UIRenderer {
+  /**
+   * @param {HTMLElement} root - Root mount node for application rendering.
+   */
   constructor(root) {
     this.root = root;
   }
 
+  /**
+   * Renders the full app shell based on current state.
+   * @param {StoryboardState} state - Current application state.
+   * @param {UIRenderOptions} options - Event and rendering options.
+   * @returns {void}
+   */
   render(state, options) {
     const {
       imageUrlsByKey,
@@ -141,6 +195,13 @@ export class UIRenderer {
     this.root.append(app);
   }
 
+  /**
+   * Builds a keyframe tile with either an image or a missing-image placeholder.
+   * @param {number} index - Zero-based keyframe order index.
+   * @param {KeyframeEntity} keyframe - Keyframe entity metadata.
+   * @param {string|null} imageUrl - Object URL for the keyframe image when available.
+   * @returns {HTMLElement} Keyframe tile element.
+   */
   #createKeyframeTile(index, keyframe, imageUrl) {
     const tile = document.createElement("article");
     tile.className = "tile keyframe-tile";
@@ -169,6 +230,12 @@ export class UIRenderer {
     return tile;
   }
 
+  /**
+   * Builds a prompt tile and binds text input callback.
+   * @param {PromptEntity} prompt - Prompt entity metadata.
+   * @param {(promptId: string, text: string) => void} onPromptInput - Prompt update callback.
+   * @returns {HTMLElement} Prompt tile element.
+   */
   #createPromptTile(prompt, onPromptInput) {
     const tile = document.createElement("article");
     tile.className = "tile prompt-tile";
@@ -189,6 +256,11 @@ export class UIRenderer {
     return tile;
   }
 
+  /**
+   * Builds the add-keyframe tile and button action binding.
+   * @param {() => void} onAddKeyframeClick - Upload trigger callback.
+   * @returns {HTMLElement} Add-keyframe tile element.
+   */
   #createAddTile(onAddKeyframeClick) {
     const tile = document.createElement("article");
     tile.className = "tile add-tile";
