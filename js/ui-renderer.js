@@ -29,6 +29,8 @@
  * @property {(title: string) => void} onTitleFinishEditing - Called when title edit commits.
  * @property {() => void} onAddKeyframeClick - Called when add-keyframe button is clicked.
  * @property {(promptId: string, text: string) => void} onPromptInput - Called on prompt input events.
+ * @property {(promptId: string, text: string) => void} onCopyPrompt - Called when copy prompt button is clicked.
+ * @property {(promptId: string) => boolean} isPromptCopied - Returns whether a prompt is currently in copied UI state.
  * @property {(promptIndex: number) => void} onPaginationClick - Called when a page button is selected.
  * @property {() => void} onDeleteEverythingClick - Called when reset button is clicked.
  * @property {boolean} isEditingTitle - Whether title edit mode is active.
@@ -88,6 +90,8 @@ export class UIRenderer {
       onTitleFinishEditing,
       onAddKeyframeClick,
       onPromptInput,
+      onCopyPrompt,
+      isPromptCopied,
       onPaginationClick,
       onDeleteEverythingClick,
       isEditingTitle
@@ -158,7 +162,7 @@ export class UIRenderer {
       if (index < state.keyframes.length - 1) {
         const prompt = state.prompts[index];
         if (prompt) {
-          rail.append(this.#createPromptTile(prompt, onPromptInput));
+          rail.append(this.#createPromptTile(prompt, index, onPromptInput, onCopyPrompt, isPromptCopied(prompt.id)));
         }
       }
     });
@@ -237,10 +241,13 @@ export class UIRenderer {
   /**
    * Builds a prompt tile and binds text input callback.
    * @param {PromptEntity} prompt - Prompt entity metadata.
+   * @param {number} promptIndex - Zero-based prompt sequence index.
    * @param {(promptId: string, text: string) => void} onPromptInput - Prompt update callback.
+   * @param {(promptId: string, text: string) => void} onCopyPrompt - Copy action callback.
+   * @param {boolean} isCopied - Whether this prompt currently shows copied state.
    * @returns {HTMLElement} Prompt tile element.
    */
-  #createPromptTile(prompt, onPromptInput) {
+  #createPromptTile(prompt, promptIndex, onPromptInput, onCopyPrompt, isCopied) {
     const tile = document.createElement("article");
     tile.className = "tile prompt-tile";
     tile.dataset.promptId = prompt.id;
@@ -248,7 +255,7 @@ export class UIRenderer {
     const label = document.createElement("label");
     label.className = "prompt-label";
     label.setAttribute("for", prompt.id);
-    label.textContent = "AI Prompt";
+    label.textContent = `AI Prompt ${promptIndex + 1}`;
 
     const input = document.createElement("textarea");
     input.id = prompt.id;
@@ -256,7 +263,13 @@ export class UIRenderer {
     input.value = prompt.text || "";
     input.addEventListener("input", (event) => onPromptInput(prompt.id, event.target.value));
 
-    tile.append(label, input);
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.className = "copy-prompt-btn";
+    copyButton.textContent = isCopied ? "Copied" : "Copy to clipboard";
+    copyButton.addEventListener("click", () => onCopyPrompt(prompt.id, input.value));
+
+    tile.append(label, input, copyButton);
     return tile;
   }
 

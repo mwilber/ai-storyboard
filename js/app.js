@@ -28,6 +28,10 @@ export class App {
     this.isEditingTitle = false;
     /** @type {number|null} */
     this.railScrollRafId = null;
+    /** @type {Map<string, number>} */
+    this.promptCopiedTimers = new Map();
+    /** @type {Map<string, number>} */
+    this.promptCopiedUntil = new Map();
   }
 
   /**
@@ -56,6 +60,8 @@ export class App {
       onTitleFinishEditing: (title) => this.#finishTitleEditing(title),
       onAddKeyframeClick: () => this.fileInput.click(),
       onPromptInput: (promptId, value) => this.stateManager.updatePrompt(promptId, value),
+      onCopyPrompt: (promptId, text) => this.#handleCopyPrompt(promptId, text),
+      isPromptCopied: (promptId) => this.#isPromptCopied(promptId),
       onPaginationClick: (index) => this.#scrollToPromptIndex(index),
       onDeleteEverythingClick: () => this.#handleDeleteEverything()
     });
@@ -166,6 +172,7 @@ export class App {
 
     this.stateManager.resetAll();
     this.isEditingTitle = false;
+    this.#clearCopyTimers();
     await this.imageManager.clearCachedImages();
     await this.render();
   }
@@ -335,6 +342,60 @@ export class App {
         button.removeAttribute("aria-current");
       }
     });
+  }
+
+  /**
+   * Copies prompt text to system clipboard and sets temporary copied-state UI.
+   * @param {string} promptId - Prompt identifier for copied-state tracking.
+   * @param {string} text - Prompt text to copy.
+   * @returns {Promise<void>}
+   */
+  async #handleCopyPrompt(promptId, text) {
+    try {
+      await navigator.clipboard.writeText(text ?? "");
+    } catch (_error) {
+      return;
+    }
+
+    const copiedUntil = Date.now() + 5000;
+    this.promptCopiedUntil.set(promptId, copiedUntil);
+
+    const existingTimer = this.promptCopiedTimers.get(promptId);
+    if (typeof existingTimer === "number") {
+      window.clearTimeout(existingTimer);
+    }
+
+    const timerId = window.setTimeout(() => {
+      const latestCopiedUntil = this.promptCopiedUntil.get(promptId) ?? 0;
+      if (latestCopiedUntil <= Date.now()) {
+        this.promptCopiedUntil.delete(promptId);
+      }
+      this.promptCopiedTimers.delete(promptId);
+      this.render();
+    }, 5000);
+
+    this.promptCopiedTimers.set(promptId, timerId);
+    await this.render();
+  }
+
+  /**
+   * Returns whether a prompt should display the copied-state label.
+   * @param {string} promptId - Prompt identifier.
+   * @returns {boolean}
+   */
+  #isPromptCopied(promptId) {
+    const copiedUntil = this.promptCopiedUntil.get(promptId);
+    return typeof copiedUntil === "number" && copiedUntil > Date.now();
+  }
+
+  /**
+   * Clears pending copied-state timers and cached copied metadata.
+   * @returns {void}
+   */
+  #clearCopyTimers() {
+    this.promptCopiedTimers.forEach((timerId) => window.clearTimeout(timerId));
+    this.promptCopiedTimers.clear();
+    this.promptCopiedUntil.clear();
   }
 
   /**
