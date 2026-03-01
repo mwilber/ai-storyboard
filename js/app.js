@@ -32,6 +32,8 @@ export class App {
     this.promptCopiedTimers = new Map();
     /** @type {Map<string, number>} */
     this.promptCopiedUntil = new Map();
+    /** @type {string|null} */
+    this.pendingRecenterPromptId = null;
   }
 
   /**
@@ -48,6 +50,7 @@ export class App {
    * @returns {Promise<void>}
    */
   async render() {
+    const recenterPromptId = this.#resolveRecenterPromptIdBeforeRender();
     this.#revokeObjectUrls();
     const imageUrlsByKey = await this.#loadImageUrls();
     const state = this.stateManager.getState();
@@ -69,6 +72,7 @@ export class App {
 
     this.#attachWheelToHorizontalScroll();
     this.#attachRailSelectionTracking();
+    this.#centerPromptById(recenterPromptId, false);
     this.#handleAutofocus();
   }
 
@@ -197,6 +201,7 @@ export class App {
     }
 
     result.removedPromptIds.forEach((promptId) => this.#clearCopyStateForPrompt(promptId));
+    this.pendingRecenterPromptId = result.insertedPromptId;
     await this.render();
 
     if (result.insertedPromptId) {
@@ -372,6 +377,44 @@ export class App {
     });
 
     return closestPromptId;
+  }
+
+  /**
+   * Chooses which prompt ID should be centered after the next render.
+   * @returns {string|null} Prompt identifier to re-center, if available.
+   */
+  #resolveRecenterPromptIdBeforeRender() {
+    if (this.pendingRecenterPromptId) {
+      const overridePromptId = this.pendingRecenterPromptId;
+      this.pendingRecenterPromptId = null;
+      return overridePromptId;
+    }
+
+    const rail = this.root.querySelector('[data-rail="true"]');
+    if (!(rail instanceof HTMLElement)) {
+      return null;
+    }
+
+    return this.#getCenteredPromptId(rail);
+  }
+
+  /**
+   * Centers a prompt tile by prompt identifier if the tile exists in the current render.
+   * @param {string|null} promptId - Prompt identifier to center.
+   * @param {boolean} [smooth=false] - Whether centering should animate.
+   * @returns {void}
+   */
+  #centerPromptById(promptId, smooth = false) {
+    if (!promptId) {
+      return;
+    }
+
+    const promptTile = this.root.querySelector(`[data-prompt-id="${promptId}"]`);
+    if (!(promptTile instanceof HTMLElement)) {
+      return;
+    }
+
+    this.#centerInRail(promptTile, smooth);
   }
 
   /**
