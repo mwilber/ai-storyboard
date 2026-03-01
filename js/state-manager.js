@@ -143,6 +143,64 @@ export class StateManager {
   }
 
   /**
+   * Inserts a keyframe on either side of an existing prompt and adds a new adjacent prompt.
+   * @param {string} imageKey - Cache API image key for the new keyframe.
+   * @param {string} promptId - Prompt identifier that anchors insertion position.
+   * @param {"left"|"right"} side - Which side of the prompt to insert on.
+   * @returns {{keyframeId: string, promptId: string}|null} Created keyframe and prompt IDs, or null on invalid input.
+   */
+  insertKeyframeAtPromptEdge(imageKey, promptId, side) {
+    const promptIndex = this.state.prompts.findIndex((item) => item.id === promptId);
+    if (promptIndex < 0 || (side !== "left" && side !== "right")) {
+      return null;
+    }
+
+    const anchorPrompt = this.state.prompts[promptIndex];
+    const leftKeyframeIndex = this.state.keyframes.findIndex((item) => item.id === anchorPrompt.leftKeyframeId);
+    const rightKeyframeIndex = this.state.keyframes.findIndex((item) => item.id === anchorPrompt.rightKeyframeId);
+    if (leftKeyframeIndex < 0 || rightKeyframeIndex < 0) {
+      return null;
+    }
+
+    const leftKeyframe = this.state.keyframes[leftKeyframeIndex];
+    const rightKeyframe = this.state.keyframes[rightKeyframeIndex];
+    const newKeyframe = {
+      id: this.#nextId("kf"),
+      imageKey,
+      createdAt: Date.now()
+    };
+
+    const newPrompt = {
+      id: this.#nextId("pr"),
+      leftKeyframeId: "",
+      rightKeyframeId: "",
+      text: ""
+    };
+
+    if (side === "left") {
+      this.state.keyframes.splice(leftKeyframeIndex + 1, 0, newKeyframe);
+      newPrompt.leftKeyframeId = leftKeyframe.id;
+      newPrompt.rightKeyframeId = newKeyframe.id;
+      anchorPrompt.leftKeyframeId = newKeyframe.id;
+      this.state.prompts.splice(promptIndex, 0, newPrompt);
+    } else {
+      this.state.keyframes.splice(rightKeyframeIndex, 0, newKeyframe);
+      newPrompt.leftKeyframeId = newKeyframe.id;
+      newPrompt.rightKeyframeId = rightKeyframe.id;
+      anchorPrompt.rightKeyframeId = newKeyframe.id;
+      this.state.prompts.splice(promptIndex + 1, 0, newPrompt);
+    }
+
+    this.state.selectedPromptId = newPrompt.id;
+    this.#saveNow();
+
+    return {
+      keyframeId: newKeyframe.id,
+      promptId: newPrompt.id
+    };
+  }
+
+  /**
    * Removes a keyframe and reconciles adjacent prompts based on remaining neighbors.
    * @param {string} keyframeId - Keyframe entity identifier to remove.
    * @returns {{removedPromptIds: string[], insertedPromptId: string|null}|null} Prompt cleanup metadata or null when keyframe does not exist.

@@ -34,6 +34,8 @@ export class App {
     this.promptCopiedUntil = new Map();
     /** @type {string|null} */
     this.pendingRecenterPromptId = null;
+    /** @type {{mode: "append"} | {mode: "insert", promptId: string, side: "left"|"right"}} */
+    this.pendingAddAction = { mode: "append" };
   }
 
   /**
@@ -61,7 +63,8 @@ export class App {
       onTitleStartEditing: () => this.#startTitleEditing(),
       onTitleInput: (title) => this.stateManager.setProjectTitle(title),
       onTitleFinishEditing: (title) => this.#finishTitleEditing(title),
-      onAddKeyframeClick: () => this.fileInput.click(),
+      onAddKeyframeClick: () => this.#openFilePickerForAppend(),
+      onInsertAtPromptEdgeClick: (promptId, side) => this.#openFilePickerForPromptInsertion(promptId, side),
       onDeleteKeyframeClick: (keyframeId) => this.#handleDeleteKeyframe(keyframeId),
       onPromptInput: (promptId, value) => this.stateManager.updatePrompt(promptId, value),
       onCopyPrompt: (promptId, text) => this.#handleCopyPrompt(promptId, text),
@@ -108,6 +111,8 @@ export class App {
     input.style.display = "none";
     input.addEventListener("change", async (event) => {
       const file = event.target.files?.[0] ?? null;
+      const addAction = this.pendingAddAction;
+      this.pendingAddAction = { mode: "append" };
       event.target.value = "";
       if (!file || !this.imageManager.isValidImage(file)) {
         return;
@@ -115,16 +120,50 @@ export class App {
 
       const imageKey = this.stateManager.nextImageKey();
       await this.imageManager.cacheImage(file, imageKey);
-      const { promptId } = await this.stateManager.addKeyframe(imageKey);
+      let addResult = null;
+      if (addAction.mode === "insert") {
+        addResult = this.stateManager.insertKeyframeAtPromptEdge(
+          imageKey,
+          addAction.promptId,
+          addAction.side
+        );
+      } else {
+        addResult = await this.stateManager.addKeyframe(imageKey);
+      }
+
+      if (!addResult) {
+        return;
+      }
+
       await this.render();
 
-      if (promptId) {
-        this.#focusAndCenterPrompt(promptId);
+      if (addResult.promptId) {
+        this.#focusAndCenterPrompt(addResult.promptId);
       }
     });
 
     document.body.append(input);
     return input;
+  }
+
+  /**
+   * Opens file picker for append-to-end keyframe creation.
+   * @returns {void}
+   */
+  #openFilePickerForAppend() {
+    this.pendingAddAction = { mode: "append" };
+    this.fileInput.click();
+  }
+
+  /**
+   * Opens file picker for prompt-adjacent keyframe insertion.
+   * @param {string} promptId - Prompt anchor identifier.
+   * @param {"left"|"right"} side - Which side of the prompt to insert on.
+   * @returns {void}
+   */
+  #openFilePickerForPromptInsertion(promptId, side) {
+    this.pendingAddAction = { mode: "insert", promptId, side };
+    this.fileInput.click();
   }
 
   /**

@@ -28,6 +28,7 @@
  * @property {() => void} onTitleStartEditing - Called when title enters edit mode.
  * @property {(title: string) => void} onTitleFinishEditing - Called when title edit commits.
  * @property {() => void} onAddKeyframeClick - Called when add-keyframe button is clicked.
+ * @property {(promptId: string, side: "left"|"right") => void} onInsertAtPromptEdgeClick - Called when inserting a keyframe next to a prompt.
  * @property {(keyframeId: string) => void} onDeleteKeyframeClick - Called when a keyframe delete button is clicked.
  * @property {(promptId: string, text: string) => void} onPromptInput - Called on prompt input events.
  * @property {(promptId: string, text: string) => void} onCopyPrompt - Called when copy prompt button is clicked.
@@ -90,6 +91,7 @@ export class UIRenderer {
       onTitleStartEditing,
       onTitleFinishEditing,
       onAddKeyframeClick,
+      onInsertAtPromptEdgeClick,
       onDeleteKeyframeClick,
       onPromptInput,
       onCopyPrompt,
@@ -164,7 +166,9 @@ export class UIRenderer {
       if (index < state.keyframes.length - 1) {
         const prompt = state.prompts[index];
         if (prompt) {
+          rail.append(this.#createInsertAddTile(prompt.id, "left", onInsertAtPromptEdgeClick));
           rail.append(this.#createPromptTile(prompt, index, onPromptInput, onCopyPrompt, isPromptCopied(prompt.id)));
+          rail.append(this.#createInsertAddTile(prompt.id, "right", onInsertAtPromptEdgeClick));
         }
       }
     });
@@ -303,6 +307,32 @@ export class UIRenderer {
     button.textContent = "+";
     button.setAttribute("aria-label", "Add A Keyframe");
     button.addEventListener("click", onAddKeyframeClick);
+
+    tile.append(label, button);
+    return tile;
+  }
+
+  /**
+   * Builds an insertion button tile for adding keyframes adjacent to an existing prompt.
+   * @param {string} promptId - Prompt identifier for insertion target.
+   * @param {"left"|"right"} side - Which side of the prompt the keyframe should be inserted.
+   * @param {(promptId: string, side: "left"|"right") => void} onInsertAtPromptEdgeClick - Insertion callback.
+   * @returns {HTMLElement} Prompt-edge insertion tile element.
+   */
+  #createInsertAddTile(promptId, side, onInsertAtPromptEdgeClick) {
+    const tile = document.createElement("article");
+    tile.className = "tile insert-add-tile";
+
+    const label = document.createElement("span");
+    label.className = "insert-add-label";
+    label.textContent = "Add Keyframe";
+
+    const button = document.createElement("button");
+    button.className = "insert-add-btn";
+    button.type = "button";
+    button.textContent = "+";
+    button.setAttribute("aria-label", `Add Keyframe ${side} of prompt`);
+    button.addEventListener("click", () => onInsertAtPromptEdgeClick(promptId, side));
 
     tile.append(label, button);
     return tile;

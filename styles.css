@@ -225,6 +225,31 @@ body {
   color: var(--button-text);
 }
 
+.insert-add-tile {
+  align-self: center;
+  text-align: center;
+}
+
+.insert-add-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #4d4d4d;
+  font-size: 0.78rem;
+}
+
+.insert-add-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--button);
+  color: var(--button-text);
+}
+
 .pagination {
   position: fixed;
   left: 50%;
