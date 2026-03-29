@@ -15,10 +15,11 @@ function getRailElement() {
 
 /**
  * Returns all prompt tile elements currently rendered in the rail.
+ * @param {HTMLElement} rail - Horizontal storyboard rail.
  * @returns {HTMLElement[]} Prompt tiles in DOM order.
  */
-function getPromptTiles() {
-  return [...document.querySelectorAll("[data-prompt-id]")].filter(
+function getPromptTiles(rail) {
+  return [...rail.querySelectorAll(".prompt-tile[data-prompt-id]")].filter(
     (node) => node instanceof HTMLElement
   );
 }
@@ -43,7 +44,7 @@ function centerTileInRail(rail, tile) {
  * @returns {string|null} Center-most prompt id, or null when unavailable.
  */
 function getCenteredPromptId(rail) {
-  const promptTiles = getPromptTiles();
+  const promptTiles = getPromptTiles(rail);
   if (promptTiles.length === 0) {
     return null;
   }
