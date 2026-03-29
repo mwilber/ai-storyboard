@@ -8,6 +8,10 @@ There is no backend server storing storyboard data, projects are not transferabl
 
 ![This is a screenshot of the application showing the AI Storyboard interface with a fixed top-left logo, a top-right Delete Everything button, a centered editable project title, a horizontal keyframe-and-prompt rail, and bottom pagination controls.](screenshot.png)
 
+## Live Demo
+- App: https://storyboard.greenzeta.com/
+- Example exported storyboard: https://storyboard.greenzeta.com/selfie.html
+
 ## Tech Stack
 - HTML, CSS, and modular JavaScript only
 - No framework, no build step, no external runtime dependencies
