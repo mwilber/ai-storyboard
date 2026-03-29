@@ -168,11 +168,16 @@ body {
 }
 
 .project-title {
+  width: min(860px, 92vw);
   margin: 0;
+  display: block;
   text-align: center;
   font-size: clamp(1.8rem, 3vw, 3rem);
   font-weight: 500;
   cursor: text;
+  background: #d2d2d2;
+  border-radius: 10px;
+  padding: 0.15rem 0.65rem;
 }
 
 .project-title-input {
