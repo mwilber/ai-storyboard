@@ -35,6 +35,7 @@
  * @property {(promptId: string) => boolean} isPromptCopied - Returns whether a prompt is currently in copied UI state.
  * @property {(promptIndex: number) => void} onPaginationClick - Called when a page button is selected.
  * @property {() => void} onExportPromptsClick - Called when export prompts button is clicked.
+ * @property {() => void} onExportWebpageClick - Called when export webpage button is clicked.
  * @property {() => void} onDeleteEverythingClick - Called when reset button is clicked.
  * @property {boolean} isEditingTitle - Whether title edit mode is active.
  */
@@ -99,6 +100,7 @@ export class UIRenderer {
       isPromptCopied,
       onPaginationClick,
       onExportPromptsClick,
+      onExportWebpageClick,
       onDeleteEverythingClick,
       isEditingTitle
     } = options;
@@ -121,6 +123,13 @@ export class UIRenderer {
     exportButton.textContent = "Export Prompts";
     exportButton.addEventListener("click", onExportPromptsClick);
     topRightControls.append(exportButton);
+
+    const exportWebpageButton = document.createElement("button");
+    exportWebpageButton.type = "button";
+    exportWebpageButton.className = "export-webpage-btn";
+    exportWebpageButton.textContent = "Export Webpage";
+    exportWebpageButton.addEventListener("click", onExportWebpageClick);
+    topRightControls.append(exportWebpageButton);
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";

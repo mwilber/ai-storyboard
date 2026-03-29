@@ -52,6 +52,20 @@ export class ImageManager {
    * @returns {Promise<string|null>} Blob URL when found, otherwise null.
    */
   async getImageBlobUrl(imageKey) {
+    const blob = await this.getImageBlob(imageKey);
+    if (!blob) {
+      return null;
+    }
+
+    return URL.createObjectURL(blob);
+  }
+
+  /**
+   * Retrieves the raw image blob for a cached keyframe image.
+   * @param {string} imageKey - Cache key associated with a keyframe image.
+   * @returns {Promise<Blob|null>} Cached image blob when found, otherwise null.
+   */
+  async getImageBlob(imageKey) {
     const cache = await this.openCache();
     const request = new Request(this.#buildImageUrl(imageKey));
     const response = await cache.match(request);
@@ -59,8 +73,21 @@ export class ImageManager {
       return null;
     }
 
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
+    return response.blob();
+  }
+
+  /**
+   * Retrieves a cached image and returns an embedded data URL for static export.
+   * @param {string} imageKey - Cache key associated with a keyframe image.
+   * @returns {Promise<string|null>} Image data URL when found, otherwise null.
+   */
+  async getImageDataUrl(imageKey) {
+    const blob = await this.getImageBlob(imageKey);
+    if (!blob) {
+      return null;
+    }
+
+    return this.#blobToDataUrl(blob);
   }
 
   /**
@@ -78,5 +105,25 @@ export class ImageManager {
    */
   #buildImageUrl(imageKey) {
     return `/__storyboard_cache__/${encodeURIComponent(imageKey)}`;
+  }
+
+  /**
+   * Converts a blob to a data URL payload.
+   * @param {Blob} blob - Image blob to encode.
+   * @returns {Promise<string>} Encoded data URL string.
+   */
+  #blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+          return;
+        }
+        reject(new Error("Failed to encode blob as data URL."));
+      };
+      reader.onerror = () => reject(reader.error || new Error("Failed to read blob."));
+      reader.readAsDataURL(blob);
+    });
   }
 }

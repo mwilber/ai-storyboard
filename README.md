@@ -74,7 +74,7 @@ Notes:
 
 ## Current Behavior
 - Top-left app title: `AI Storyboard`
-- Top-right controls: `Export Prompts` and `Delete Everything`
+- Top-right controls: `Export Prompts`, `Export Webpage`, and `Delete Everything`
 - Centered project title that toggles to editable mode on click
 - Horizontally scrollable storyboard rail
 - Add keyframes via image upload at the end or at insertion controls on both sides of each prompt
@@ -91,6 +91,9 @@ Notes:
 - `Export Prompts` downloads a `.txt` file generated entirely in the browser.
 - Prompts are concatenated in storyboard order.
 - Each section starts with a hard return, heading (`AI Prompt #`), another hard return, prompt text, and a trailing hard return for spacing.
+- `Export Webpage` downloads a static read-only `.html` snapshot of the current storyboard.
+- Exported webpage embeds keyframe image data URLs directly in `<img src>` and hard-codes prompt text in `<textarea readonly>`.
+- Exported webpage includes only storyboard content plus bottom pagination buttons, with no editing, upload, copy, or delete controls.
 
 ## Persistence Model
 - State JSON is stored in `localStorage` under a configured key.

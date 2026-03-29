@@ -88,6 +88,21 @@ body {
   background: rgba(37, 99, 235, 0.1);
 }
 
+.export-webpage-btn {
+  border: 1px solid #2f5de0;
+  background: #ffffff;
+  color: #1f4fd7;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-webpage-btn:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+
 .project-title-wrap {
   margin-top: var(--title-top-gap);
   display: flex;
@@ -326,6 +341,11 @@ body {
   }
 
   .export-prompts-btn {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+  }
+
+  .export-webpage-btn {
     padding: 0.4rem 0.7rem;
     font-size: 0.8rem;
   }

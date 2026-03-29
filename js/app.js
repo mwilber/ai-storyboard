@@ -71,6 +71,7 @@ export class App {
       isPromptCopied: (promptId) => this.#isPromptCopied(promptId),
       onPaginationClick: (index) => this.#scrollToPromptIndex(index),
       onExportPromptsClick: () => this.#handleExportPrompts(),
+      onExportWebpageClick: () => this.#handleExportWebpage(),
       onDeleteEverythingClick: () => this.#handleDeleteEverything()
     });
 
@@ -240,6 +241,23 @@ export class App {
   }
 
   /**
+   * Exports the current storyboard as a static, read-only HTML webpage.
+   * @returns {Promise<void>}
+   */
+  async #handleExportWebpage() {
+    const exportHtml = await this.#buildWebpageExportHtml();
+    const blob = new Blob([exportHtml], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = this.#buildWebpageExportFilename();
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
    * Builds concatenated prompt text output with hard-return heading sections.
    * @returns {string} Exported prompt text payload.
    */
@@ -262,6 +280,224 @@ export class App {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
     return `${safeTitle || "ai-storyboard"}-prompts.txt`;
+  }
+
+  /**
+   * Builds the exported webpage filename based on the current project title.
+   * @returns {string} Download filename.
+   */
+  #buildWebpageExportFilename() {
+    const title = this.stateManager.getState().projectTitle || "ai-storyboard";
+    const safeTitle = title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return `${safeTitle || "ai-storyboard"}-storyboard.html`;
+  }
+
+  /**
+   * Builds a static HTML document representing the current storyboard state.
+   * @returns {Promise<string>} Complete standalone export HTML markup.
+   */
+  async #buildWebpageExportHtml() {
+    const state = this.stateManager.getState();
+    const encodedTitle = this.#escapeHtml(state.projectTitle || "Project Title");
+    const encodedDocumentTitle = this.#escapeHtml(`${state.projectTitle || "Project Title"} - AI Storyboard`);
+    const imageDataUrlsByKey = await this.#loadImageDataUrls();
+    const activePromptIndex = Math.max(
+      0,
+      state.prompts.findIndex((prompt) => prompt.id === state.selectedPromptId)
+    );
+    const promptPaginationModel = this.#buildPaginationModel(state.prompts.length, activePromptIndex);
+    const railClass = state.keyframes.length === 0 ? "storyboard-rail storyboard-rail-empty" : "storyboard-rail";
+    const railMarkup = state.keyframes
+      .map((keyframe, keyframeIndex) => {
+        const keyframeMarkup = this.#buildExportKeyframeTileMarkup(
+          keyframeIndex,
+          keyframe,
+          imageDataUrlsByKey.get(keyframe.imageKey) || null
+        );
+        const prompt = state.prompts[keyframeIndex];
+        if (!prompt) {
+          return keyframeMarkup;
+        }
+        const promptMarkup = this.#buildExportPromptTileMarkup(prompt, keyframeIndex);
+        return `${keyframeMarkup}\n${promptMarkup}`;
+      })
+      .join("\n");
+
+    const paginationMarkup =
+      state.prompts.length > 0
+        ? `<nav class="pagination" aria-label="Prompt Pagination">
+${promptPaginationModel
+  .map((entry) => {
+    if (entry === "...") {
+      return '  <span class="page-gap">...</span>';
+    }
+    const prompt = state.prompts[entry - 1];
+    if (!prompt) {
+      return "";
+    }
+    const encodedPromptId = this.#escapeAttribute(prompt.id);
+    const isActive = activePromptIndex + 1 === entry;
+    return `  <button type="button" class="page-btn" data-prompt-id="${encodedPromptId}"${
+      isActive ? ' aria-current="page"' : ""
+    }>${entry}</button>`;
+  })
+  .filter(Boolean)
+  .join("\n")}
+</nav>`
+        : "";
+
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${encodedDocumentTitle}</title>
+    <link rel="stylesheet" href="https://storyboard.greenzeta.com/styles.css" />
+    <style>
+      .project-title {
+        cursor: default;
+      }
+      .prompt-input[readonly] {
+        background: #fff;
+        color: inherit;
+      }
+      .prompt-input[readonly]:focus {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+    </style>
+    <script defer src="https://storyboard.greenzeta.com/js/export-webpage-static.js"></script>
+  </head>
+  <body>
+    <div class="app export-webpage">
+      <p class="app-header-label">AI Storyboard</p>
+      <div class="project-title-wrap">
+        <h1 class="project-title">${encodedTitle}</h1>
+      </div>
+      <main class="storyboard-layout">
+        <section class="${railClass}" data-rail="true">
+${railMarkup}
+        </section>
+${paginationMarkup}
+      </main>
+    </div>
+  </body>
+</html>
+`;
+  }
+
+  /**
+   * Builds static markup for one exported keyframe tile.
+   * @param {number} keyframeIndex - Zero-based keyframe index.
+   * @param {{id: string}} keyframe - Keyframe metadata.
+   * @param {string|null} imageDataUrl - Encoded image data URL payload.
+   * @returns {string} Keyframe tile HTML.
+   */
+  #buildExportKeyframeTileMarkup(keyframeIndex, keyframe, imageDataUrl) {
+    const encodedKeyframeId = this.#escapeAttribute(keyframe.id);
+    const encodedAlt = this.#escapeAttribute(`Keyframe ${keyframeIndex + 1}`);
+    const mediaMarkup = imageDataUrl
+      ? `<img src="${this.#escapeAttribute(imageDataUrl)}" alt="${encodedAlt}" />`
+      : '<span class="media-missing">Image Missing</span>';
+
+    return `<article class="tile keyframe-tile" data-keyframe-id="${encodedKeyframeId}">
+  <div class="media-frame">
+    ${mediaMarkup}
+  </div>
+  <p class="keyframe-caption">Keyframe ${keyframeIndex + 1}</p>
+</article>`;
+  }
+
+  /**
+   * Builds static markup for one exported prompt tile.
+   * @param {{id: string, text: string}} prompt - Prompt metadata.
+   * @param {number} promptIndex - Zero-based prompt index.
+   * @returns {string} Prompt tile HTML.
+   */
+  #buildExportPromptTileMarkup(prompt, promptIndex) {
+    const encodedPromptId = this.#escapeAttribute(prompt.id);
+    const encodedPromptText = this.#escapeHtml(prompt.text || "");
+
+    return `<article class="tile prompt-tile" data-prompt-id="${encodedPromptId}">
+  <label class="prompt-label" for="${encodedPromptId}">AI Prompt ${promptIndex + 1}</label>
+  <textarea id="${encodedPromptId}" class="prompt-input" readonly>${encodedPromptText}</textarea>
+</article>`;
+  }
+
+  /**
+   * Loads keyframe images as encoded data URLs for static HTML export.
+   * @returns {Promise<Map<string, string>>} Map of image cache keys to encoded data URLs.
+   */
+  async #loadImageDataUrls() {
+    const state = this.stateManager.getState();
+    const imageDataUrlsByKey = new Map();
+
+    await Promise.all(
+      state.keyframes.map(async (keyframe) => {
+        const imageDataUrl = await this.imageManager.getImageDataUrl(keyframe.imageKey);
+        if (imageDataUrl) {
+          imageDataUrlsByKey.set(keyframe.imageKey, imageDataUrl);
+        }
+      })
+    );
+
+    return imageDataUrlsByKey;
+  }
+
+  /**
+   * Builds compact pagination entries with ellipsis gap markers.
+   * @param {number} total - Total prompt count.
+   * @param {number} activeIndex - Zero-based active prompt index.
+   * @returns {(number|string)[]} Pagination entries where numbers are one-based page indices.
+   */
+  #buildPaginationModel(total, activeIndex) {
+    if (total <= 0) {
+      return [];
+    }
+
+    if (total <= 7) {
+      return Array.from({ length: total }, (_item, index) => index + 1);
+    }
+
+    const pages = new Set([1, total, activeIndex + 1, activeIndex, activeIndex + 2]);
+    const filtered = [...pages].filter((page) => page >= 1 && page <= total).sort((a, b) => a - b);
+    const model = [];
+
+    for (let index = 0; index < filtered.length; index += 1) {
+      if (index > 0 && filtered[index] - filtered[index - 1] > 1) {
+        model.push("...");
+      }
+      model.push(filtered[index]);
+    }
+
+    return model;
+  }
+
+  /**
+   * Escapes HTML text content to prevent tag interpretation in exports.
+   * @param {string} value - Raw text value.
+   * @returns {string} Escaped text content.
+   */
+  #escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  /**
+   * Escapes HTML attribute values for safe inline usage.
+   * @param {string} value - Raw attribute value.
+   * @returns {string} Escaped attribute-safe value.
+   */
+  #escapeAttribute(value) {
+    return this.#escapeHtml(value).replace(/`/g, "&#96;");
   }
 
   /**
