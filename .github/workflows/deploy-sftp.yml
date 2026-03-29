@@ -8,10 +8,10 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - name: 🚚 Get latest code                     # Checkout the latest code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       - name: 📂 SFTP uploader                       # Upload to SFTP 
-        uses: wangyucode/sftp-upload-action@v1.4.8
+        uses: wangyucode/sftp-upload-action@v3
         with:
           host: ${{ secrets.HOST }}                  # Recommended to put the credentials in github secrets.
           username: ${{ secrets.USER }}
